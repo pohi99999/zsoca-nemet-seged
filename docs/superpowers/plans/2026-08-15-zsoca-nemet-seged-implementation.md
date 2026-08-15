@@ -136,66 +136,11 @@ git commit -m "feat: add Supabase schema migration and client wrappers"
 - Create: `src/lib/speech/speechRecognition.ts`
 - Test: `tests/speech.test.ts`
 
-- [ ] **Step 1: Write test for SpeechSynthesis parameters**
-
-```typescript
-// tests/speech.test.ts
-import { describe, it, expect, vi } from 'vitest';
-import { createSpeechUtterance } from '../src/lib/speech/speechSynthesis';
-
-describe('Speech Synthesis Utility', () => {
-  it('should create an utterance configured for German (de-DE)', () => {
-    const utterance = createSpeechUtterance('Guten Tag, wie geht es Ihnen?');
-    expect(utterance.text).toBe('Guten Tag, wie geht es Ihnen?');
-    expect(utterance.lang).toBe('de-DE');
-  });
-});
-```
-
-- [ ] **Step 2: Run test to verify it fails**
-
-Run: `npx vitest run tests/speech.test.ts`  
-Expected: FAIL
-
-- [ ] **Step 3: Implement SpeechSynthesis & SpeechRecognition helpers**
-
-```typescript
-// src/lib/speech/speechSynthesis.ts
-export function createSpeechUtterance(text: string, rate: number = 0.9): { text: string; lang: string; rate: number } {
-  return {
-    text,
-    lang: 'de-DE',
-    rate,
-  };
-}
-
-export function speakGerman(text: string, rate: number = 0.9): void {
-  if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-    console.warn('SpeechSynthesis is not supported in this browser.');
-    return;
-  }
-  window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = 'de-DE';
-  utterance.rate = rate;
-  window.speechSynthesis.speak(utterance);
-}
-```
-
-```typescript
-// src/lib/speech/speechRecognition.ts
-export function isSpeechRecognitionSupported(): boolean {
-  if (typeof window === 'undefined') return false;
-  return 'SpeechRecognition' in window || 'webkitSpeechRecognition' in window;
-}
-```
-
-- [ ] **Step 4: Run test to verify it passes**
-
-Run: `npx vitest run tests/speech.test.ts`  
-Expected: PASS
-
-- [ ] **Step 5: Commit**
+- [x] **Step 1: Write test for SpeechSynthesis parameters**
+- [x] **Step 2: Run test to verify it fails**
+- [x] **Step 3: Implement SpeechSynthesis & SpeechRecognition helpers**
+- [x] **Step 4: Run test to verify it passes**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/lib/speech/ tests/
