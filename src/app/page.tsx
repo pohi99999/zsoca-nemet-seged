@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function Home() {
   return (
     <main className="flex-1 p-6 flex flex-col justify-center items-center text-center">
@@ -10,9 +12,12 @@ export default function Home() {
       <p className="text-slate-600 text-sm mb-6 max-w-xs">
         Beszédfókuszú interaktív német nyelvfejlesztő alkalmazás.
       </p>
-      <button className="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium rounded-xl shadow-sm transition duration-150">
+      <Link
+        href="/assessment"
+        className="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium rounded-xl shadow-sm transition duration-150 block text-center"
+      >
         Szintfelmérés Indítása
-      </button>
+      </Link>
     </main>
   );
 }

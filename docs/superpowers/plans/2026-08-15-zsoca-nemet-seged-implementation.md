@@ -156,35 +156,11 @@ git commit -m "feat: implement Web Speech API TTS and STT helpers"
 - Create: `src/app/assessment/page.tsx`
 - Test: `tests/assessment_api.test.ts`
 
-- [ ] **Step 1: Write test for level assessment API payload**
-
-```typescript
-// tests/assessment_api.test.ts
-import { describe, it, expect } from 'vitest';
-
-describe('Assessment API logic', () => {
-  it('should format initial assessment system prompt correctly', () => {
-    const prompt = 'Assessment prompt for German beginner evaluation';
-    expect(prompt).toContain('Assessment');
-  });
-});
-```
-
-- [ ] **Step 2: Run test to verify it fails**
-
-Run: `npx vitest run tests/assessment_api.test.ts`  
-Expected: PASS/FAIL check.
-
-- [ ] **Step 3: Implement Serverless Assessment API Route & UI Component**
-
-Implement `src/app/api/assessment/route.ts` using Gemini API with prompts tailored to German level evaluation (5-8 situational questions). Implement `src/app/assessment/page.tsx` with mobile-first chat UI, speaker buttons, microphone buttons, and completion transition.
-
-- [ ] **Step 4: Verify test suite**
-
-Run: `npx vitest run`  
-Expected: PASS
-
-- [ ] **Step 5: Commit**
+- [x] **Step 1: Write test for level assessment API payload**
+- [x] **Step 2: Run test to verify it fails**
+- [x] **Step 3: Implement Serverless Assessment API Route & UI Component**
+- [x] **Step 4: Verify test suite**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/app/api/assessment/ src/app/assessment/ tests/

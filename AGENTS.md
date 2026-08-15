@@ -29,8 +29,8 @@ A **Zsóca Német Segéd** egy interaktív, okostelefonra optimalizált webes (P
 - [x] **Task 1: Project Scaffolding & Next.js PWA Setup** (Elkészült, tesztek: 2/2 ✅, Kódminőség: Jóváhagyva ✅)
 - [x] **Task 2: Supabase Schema Migration & Database Client Setup** (Elkészült, tesztek: 4/4 ✅, Kódminőség: Jóváhagyva ✅)
 - [x] **Task 3: Web Speech API Helper Utilities (TTS & STT)** (Elkészült, tesztek: 11/11 ✅, Kódminőség: Jóváhagyva ✅)
-- [ ] **Task 4: Interactive Level Assessment Flow & Gemini Integration** (Következő feladat)
-- [ ] **Task 5: Personalized Learning Plan Generator & Dashboard UI**
+- [x] **Task 4: Interactive Level Assessment Flow & Gemini Integration** (Elkészült, tesztek: 6/6 ✅, Kódminőség: Jóváhagyva ✅)
+- [ ] **Task 5: Personalized Learning Plan Generator & Dashboard UI** (Következő feladat)
 - [ ] **Task 6: Conversational Situational Practice Screen**
 - [ ] **Task 7: Vocabulary & Memory Storage Screen**
 - [ ] **Task 8: End-to-End Testing & Verification with Playwright**
