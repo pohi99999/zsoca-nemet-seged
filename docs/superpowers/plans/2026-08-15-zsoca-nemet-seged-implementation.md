@@ -191,11 +191,11 @@ git commit -m "feat: add level assessment API and mobile chat view"
 - Create: `src/app/practice/[moduleId]/page.tsx`
 - Test: `tests/practice_chat.test.ts`
 
-- [ ] **Step 1: Write test for practice chat handler with TTS/STT toggle logic**
-- [ ] **Step 2: Run test to verify it fails**
-- [ ] **Step 3: Implement practice chat page with audio playback, mic recording, translation toggle, and optional grammar card**
-- [ ] **Step 4: Run test to verify it passes**
-- [ ] **Step 5: Commit**
+- [x] **Step 1: Write test for practice chat handler with TTS/STT toggle logic**
+- [x] **Step 2: Run test to verify it fails**
+- [x] **Step 3: Implement practice chat page with audio playback, mic recording, translation toggle, and optional grammar card**
+- [x] **Step 4: Run test to verify it passes**
+- [x] **Step 5: Commit**
 
 ---
 

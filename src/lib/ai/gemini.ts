@@ -419,3 +419,222 @@ KIZÁRÓLAG érvényes JSON formátumban válaszolj, Markdown kódblokkok nélk�
 `.trim();
 }
 
+export interface SituationalVocabularySuggestion {
+  german: string;
+  hungarian: string;
+  pronunciation_hint?: string;
+}
+
+export interface SituationalChatMessage {
+  role: 'assistant' | 'user';
+  content?: string;
+  german_text?: string;
+  audio_text?: string;
+  hungarian_translation?: string;
+  vocabulary_suggestions?: SituationalVocabularySuggestion[];
+  grammar_tip?: string;
+}
+
+export interface SituationalChatResponse {
+  german_text: string;
+  audio_text: string;
+  hungarian_translation: string;
+  vocabulary_suggestions: SituationalVocabularySuggestion[];
+  grammar_tip?: string;
+  is_completed: boolean;
+}
+
+const MOCK_MODULE_SCENARIOS: Record<string, { role: string; turns: SituationalChatResponse[] }> = {
+  '1': {
+    role: 'Pékség eladója (Bäckerei-Verkäufer)',
+    turns: [
+      {
+        german_text: 'Guten Tag! Herzlich willkommen in unserer Bäckerei. Was darf es für Sie sein?',
+        audio_text: 'Guten Tag! Herzlich willkommen in unserer Bäckerei. Was darf es für Sie sein?',
+        hungarian_translation: 'Jó napot! Isten hozta a pékségünkben. Mit adhatok Önnek?',
+        vocabulary_suggestions: [
+          { german: 'das Brötchen', hungarian: 'zsemle', pronunciation_hint: 'bröt-hyen' },
+          { german: 'der Kaffee', hungarian: 'kávé', pronunciation_hint: 'kaf-fé' },
+          { german: 'Ich hätte gerne...', hungarian: 'Szeretnék kérni...', pronunciation_hint: 'ih het-te ger-ne' },
+        ],
+        grammar_tip: 'Az "Ich hätte gerne..." udvarias módja a kérésnek feltételes módban (Konjunktiv II).',
+        is_completed: false,
+      },
+      {
+        german_text: 'Sehr gerne! Möchten Sie den Kaffee mit Milch und Zucker?',
+        audio_text: 'Sehr gerne! Möchten Sie den Kaffee mit Milch und Zucker?',
+        hungarian_translation: 'Nagyon szívesen! Tejjel és cukorral kéri a kávét?',
+        vocabulary_suggestions: [
+          { german: 'die Milch', hungarian: 'tej', pronunciation_hint: 'milh' },
+          { german: 'der Zucker', hungarian: 'cukor', pronunciation_hint: 'cuk-ker' },
+          { german: 'ohne Zucker', hungarian: 'cukor nélkül', pronunciation_hint: 'ó-ne cuk-ker' },
+        ],
+        grammar_tip: 'A "mit" (valamivel) elöljárószó mindig részes esetet (Dativ) vonz.',
+        is_completed: false,
+      },
+      {
+        german_text: 'Perfekt. Kommt sonst noch etwas dazu, oder ist das alles?',
+        audio_text: 'Perfekt. Kommt sonst noch etwas dazu, oder ist das alles?',
+        hungarian_translation: 'Tökéletes. Lesz még valami más hozzá, vagy ennyi lesz?',
+        vocabulary_suggestions: [
+          { german: 'sonst noch etwas', hungarian: 'még valami más', pronunciation_hint: 'zonst noh et-vasz' },
+          { german: 'Das ist alles', hungarian: 'Ez minden / Ennyi lesz', pronunciation_hint: 'dasz iszt al-lesz' },
+          { german: 'zahlen', hungarian: 'fizetni', pronunciation_hint: 'cá-len' },
+        ],
+        is_completed: false,
+      },
+      {
+        german_text: 'Wunderbar! Das macht dann zusammen 4 Euro 50 bitte. Vielen Dank und einen schönen Tag noch!',
+        audio_text: 'Wunderbar! Das macht dann zusammen 4 Euro 50 bitte. Vielen Dank und einen schönen Tag noch!',
+        hungarian_translation: 'Csodás! Ez összesen 4 euró 50 cent lesz kérlek. Köszönöm szépen és további szép napot!',
+        vocabulary_suggestions: [
+          { german: 'zusammen', hungarian: 'együtt / összesen', pronunciation_hint: 'cu-zam-men' },
+          { german: 'Schönen Tag noch!', hungarian: 'További szép napot!', pronunciation_hint: 'ső-nen ták noh' },
+        ],
+        grammar_tip: 'A "Schönen Tag noch!" egy általános, kedves elköszönési formula.',
+        is_completed: true,
+      },
+    ],
+  },
+  '2': {
+    role: 'Helyi járókelő Berlinben (Passant in Berlin)',
+    turns: [
+      {
+        german_text: 'Hallo! Kann ich dir helfen? Du siehst etwas verloren aus.',
+        audio_text: 'Hallo! Kann ich dir helfen? Du siehst etwas verloren aus.',
+        hungarian_translation: 'Szia! Segíthetek? Kicsit tanácstalannak tűnsz.',
+        vocabulary_suggestions: [
+          { german: 'Entschuldigung', hungarian: 'Elnézést', pronunciation_hint: 'ent-sul-di-gung' },
+          { german: 'der Bahnhof', hungarian: 'pályaudvar', pronunciation_hint: 'bán-hóf' },
+          { german: 'Wie komme ich zu...?', hungarian: 'Hogyan jutok el a...?', pronunciation_hint: 'ví kom-me ih cu' },
+        ],
+        is_completed: false,
+      },
+      {
+        german_text: 'Gehe einfach hier geradeaus bis zur Kreuzung und dann biegen Sie links ab.',
+        audio_text: 'Gehe einfach hier geradeaus bis zur Kreuzung und dann biegen Sie links ab.',
+        hungarian_translation: 'Menj egyszerűen egyenesen a kereszteződésig, majd fordulj balra.',
+        vocabulary_suggestions: [
+          { german: 'geradeaus', hungarian: 'egyenesen', pronunciation_hint: 'ge-rá-de-ausz' },
+          { german: 'die Kreuzung', hungarian: 'kereszteződés', pronunciation_hint: 'kroj-cung' },
+          { german: 'links abbiegen', hungarian: 'balra fordulni', pronunciation_hint: 'links ap-bí-gen' },
+        ],
+        grammar_tip: 'Az "abbiegen" elváló igekötős ige: "Biegen Sie links ab."',
+        is_completed: false,
+      },
+      {
+        german_text: 'Genau, direkt nach der U-Bahn Station siehst du den Haupteingang. Ist nicht weit!',
+        audio_text: 'Genau, direkt nach der U-Bahn Station siehst du den Haupteingang. Ist nicht weit!',
+        hungarian_translation: 'Pontosan, közvetlenül a metróállomás után meglátod a főbejáratot. Nincs messze!',
+        vocabulary_suggestions: [
+          { german: 'die U-Bahn', hungarian: 'metró', pronunciation_hint: 'ú-bán' },
+          { german: 'der Haupteingang', hungarian: 'főbejárat', pronunciation_hint: 'haupt-ájn-gang' },
+          { german: 'nicht weit', hungarian: 'nincs messze', pronunciation_hint: 'niht vájt' },
+        ],
+        is_completed: false,
+      },
+      {
+        german_text: 'Gern geschehen! Gute Reise und viel Spaß in der Stadt!',
+        audio_text: 'Gern geschehen! Gute Reise und viel Spaß in der Stadt!',
+        hungarian_translation: 'Szívesen! Jó utat és érezd jól magad a városban!',
+        vocabulary_suggestions: [
+          { german: 'Gern geschehen', hungarian: 'Szívesen', pronunciation_hint: 'gern ge-sé-en' },
+          { german: 'Gute Reise', hungarian: 'Jó utat', pronunciation_hint: 'gú-te ráj-ze' },
+        ],
+        is_completed: true,
+      },
+    ],
+  },
+};
+
+/**
+ * Returns mock situational response based on module and turn
+ */
+export function getMockSituationalResponse(
+  moduleId: string = '1',
+  turnCount: number = 0,
+  userMessage?: string
+): SituationalChatResponse {
+  const cleanId = String(moduleId).replace(/[^0-9]/g, '') || '1';
+  const scenario = MOCK_MODULE_SCENARIOS[cleanId] || MOCK_MODULE_SCENARIOS['1'];
+  
+  if (turnCount >= 4) {
+    const lastTurn = scenario.turns[scenario.turns.length - 1];
+    return {
+      ...lastTurn,
+      is_completed: true,
+    };
+  }
+
+  const turnIndex = Math.max(0, Math.min(turnCount > 0 ? turnCount - 1 : 0, scenario.turns.length - 1));
+  const turnData = scenario.turns[turnIndex];
+
+  return {
+    ...turnData,
+    is_completed: turnCount >= 4,
+  };
+}
+
+/**
+ * Creates prompt for the situational conversational roleplay
+ */
+export function createSituationalChatPrompt(params: {
+  moduleId?: string;
+  moduleTitle?: string;
+  history: Array<{ role: 'assistant' | 'user'; content: string }>;
+  userMessage?: string;
+  turnCount: number;
+  userName?: string;
+}): string {
+  const {
+    moduleTitle = 'Gyakorlati Szituáció',
+    history = [],
+    userMessage = '',
+    turnCount = 1,
+    userName = 'Zsóca',
+  } = params;
+
+  const historyText = history
+    .map((m) => `${m.role === 'assistant' ? 'Partner (Német)' : `${userName}`}: ${m.content}`)
+    .join('\n');
+
+  const isFinalTurn = turnCount >= 4;
+
+  return `
+Te egy közvetlen, kedves és bátorító német beszélgetőpartner vagy a következő életszerű szituációban:
+Szituációs téma: "${moduleTitle}"
+Diák: ${userName} (Nyelvi szint: A2 felelevenítő)
+Jelenlegi kör: ${turnCount}. lépés (összesen 4-5 lépéses a beszélgetés).
+${isFinalTurn ? 'Ez az utolsó kör, zárd le a szituációt barátságosan és dicsérd meg Zsócát!' : ''}
+
+Eddigi párbeszéd:
+${historyText || '(A beszélgetés most kezdődik)'}
+
+Zsóca legutóbbi mondata: "${userMessage}"
+
+SZABÁLYOK:
+1. Beszélj természetes, egyszerű, élő német nyelven (A2 szinthez igazítva).
+2. Maradj a szituációs szerepedben (pl. pék/felszolgáló/recepciós/járókelő/orvos).
+3. A nyelvtan csak másodlagos: ha Zsóca apró hibát vét, ne javítsd ki, csak akkor adj egy rövid barátságos tippet a "grammar_tip" mezőben, ha valami kifejezetten hasznos.
+4. Adj 2-3 kulcsszót vagy hasznos kifejezést a "vocabulary_suggestions" tömbben kiejtési segédlettel!
+5. KIZÁRÓLAG érvényes JSON formátumban válaszolj, Markdown kódblokkok nélkül.
+
+Válasz JSON séma:
+{
+  "german_text": "német mondatod a szerepedben",
+  "audio_text": "a pontos német szöveg, amit a böngésző felolvas",
+  "hungarian_translation": "a német mondatod pontos magyar fordítása",
+  "vocabulary_suggestions": [
+    {
+      "german": "das Brötchen",
+      "hungarian": "zsemle",
+      "pronunciation_hint": "bröt-hyen"
+    }
+  ],
+  "grammar_tip": "opcionális rövid magyar tipp, vagy üres string ha nincs",
+  "is_completed": ${isFinalTurn ? 'true' : 'false'}
+}
+`.trim();
+}
+
+
