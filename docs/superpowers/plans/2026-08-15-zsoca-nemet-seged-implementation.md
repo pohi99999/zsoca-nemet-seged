@@ -116,87 +116,11 @@ git commit -m "feat: setup Next.js project scaffolding and PWA manifest"
 - Create: `src/lib/supabase/server.ts`
 - Test: `tests/supabase_schema.test.ts`
 
-- [ ] **Step 1: Write test for SQL schema file definition**
-
-```typescript
-// tests/supabase_schema.test.ts
-import { describe, it, expect } from 'vitest';
-import fs from 'fs';
-import path from 'path';
-
-describe('Database Schema', () => {
-  it('should contain tables for profiles, assessment, plans, modules, and vocabulary memory', () => {
-    const migrationPath = path.join(process.cwd(), 'supabase/migrations/20260815000000_init_schema.sql');
-    expect(fs.existsSync(migrationPath)).toBe(true);
-    const sql = fs.readFileSync(migrationPath, 'utf-8');
-    expect(sql).toContain('CREATE TABLE profiles');
-    expect(sql).toContain('CREATE TABLE assessment_results');
-    expect(sql).toContain('CREATE TABLE learning_plans');
-    expect(sql).toContain('CREATE TABLE modules');
-    expect(sql).toContain('CREATE TABLE user_vocabulary_memory');
-  });
-});
-```
-
-- [ ] **Step 2: Run test to verify it fails**
-
-Run: `npx vitest run tests/supabase_schema.test.ts`  
-Expected: FAIL with migration file missing.
-
-- [ ] **Step 3: Create SQL migration script & Supabase clients**
-
-```sql
--- supabase/migrations/20260815000000_init_schema.sql
-CREATE TABLE IF NOT EXISTS profiles (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  current_level TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS assessment_results (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
-  summary TEXT,
-  strengths TEXT[],
-  focus_areas TEXT[],
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS learning_plans (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
-  title TEXT NOT NULL,
-  status TEXT DEFAULT 'active',
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS modules (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  plan_id UUID REFERENCES learning_plans(id) ON DELETE CASCADE,
-  order_index INT NOT NULL,
-  title TEXT NOT NULL,
-  description TEXT,
-  status TEXT DEFAULT 'available'
-);
-
-CREATE TABLE IF NOT EXISTS user_vocabulary_memory (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
-  german_word TEXT NOT NULL,
-  hungarian_translation TEXT NOT NULL,
-  pronunciation_notes TEXT,
-  difficulty_score INT DEFAULT 1,
-  last_practiced_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-```
-
-- [ ] **Step 4: Run test to verify it passes**
-
-Run: `npx vitest run tests/supabase_schema.test.ts`  
-Expected: PASS
-
-- [ ] **Step 5: Commit**
+- [x] **Step 1: Write test for SQL schema file definition**
+- [x] **Step 2: Run test to verify it fails**
+- [x] **Step 3: Create SQL migration script & Supabase clients**
+- [x] **Step 4: Run test to verify it passes**
+- [x] **Step 5: Commit**
 
 ```bash
 git add supabase/ src/lib/supabase/ tests/
