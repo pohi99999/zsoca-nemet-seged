@@ -8,7 +8,7 @@ import {
   AssessmentDialogueResponse,
   AssessmentResult,
 } from '@/lib/ai/gemini';
-import { getSupabaseServerClient } from '@/lib/supabase/server';
+import { getSupabaseServerClient, isSupabaseConfigured } from '@/lib/supabase/server';
 
 const TOTAL_ASSESSMENT_QUESTIONS = 5;
 
@@ -93,10 +93,10 @@ export async function POST(request: Request) {
       }
     }
 
-    // Persist into Supabase if possible (gracefully fail-safe)
+    // Persist into Supabase if possible and configured (gracefully fail-safe)
     try {
-      const supabase = getSupabaseServerClient();
-      if (userId) {
+      if (userId && isSupabaseConfigured()) {
+        const supabase = getSupabaseServerClient();
         // Update user profile level
         await supabase
           .from('profiles')

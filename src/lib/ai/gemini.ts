@@ -264,3 +264,158 @@ export function getMockAssessmentQuestion(questionIndex: number) {
 export function getMockAssessmentResult(): AssessmentResult {
   return MOCK_FINAL_RESULT;
 }
+
+export interface LearningPlanModule {
+  id?: string;
+  order_index: number;
+  title: string;
+  description: string;
+  estimated_duration: string;
+  status: 'available' | 'locked' | 'completed';
+  situational_goal?: string;
+  key_phrases?: string[];
+}
+
+export interface LearningPlanResponse {
+  id?: string;
+  title: string;
+  level: string;
+  summary?: string;
+  modules: LearningPlanModule[];
+}
+
+export const MOCK_LEARNING_PLAN_MODULES: LearningPlanModule[] = [
+  {
+    order_index: 1,
+    title: 'Pékség & Kávézó - Rendelés magabiztosan',
+    description: 'Gyakorold az ételek, italok rendelését, a választást és a fizetést egy bécsi kávézóban.',
+    estimated_duration: '10-15 perc',
+    status: 'available',
+    situational_goal: 'Rendelés, kérések és fizetés magabiztos lebonyolítása.',
+    key_phrases: ['Ich möchte bitte...', 'Was kostet das?', 'Zusammen oder getrennt?'],
+  },
+  {
+    order_index: 2,
+    title: 'Útbaigazítás a városban',
+    description: 'Kérdezz és érts meg útvonalakat, tájékozódj Berlin utcáin és a pályaudvaron.',
+    estimated_duration: '10-15 perc',
+    status: 'locked',
+    situational_goal: 'Tájékozódás és útbaigazítás kérése/megértése.',
+    key_phrases: ['Entschuldigung, wo ist...?', 'Geradeaus', 'Biegen Sie links/rechts ab'],
+  },
+  {
+    order_index: 3,
+    title: 'Szállodai bejelentkezés & Kérések',
+    description: 'Bejelentkezés a recepción, szobafoglalás részletei és kérések intézése.',
+    estimated_duration: '15 perc',
+    status: 'locked',
+    situational_goal: 'Szállodai bejelentkezés és problémamegoldás.',
+    key_phrases: ['Ich habe eine Reservierung', 'Gibt es WLAN?', 'Bis wann ist das Frühstück?'],
+  },
+  {
+    order_index: 4,
+    title: 'Hétköznapi csevegés & Hobbik',
+    description: 'Beszélgess a hétvégéről, hobbikról és ismerkedj német anyanyelvűekkel kötetlenül.',
+    estimated_duration: '15 perc',
+    status: 'locked',
+    situational_goal: 'Kötetlen beszélgetés és személyes élmények megosztása.',
+    key_phrases: ['In meiner Freizeit...', 'Was machst du gerne?', 'Letztes Wochenende...'],
+  },
+  {
+    order_index: 5,
+    title: 'Orvosnál & Gyógyszertárban',
+    description: 'Panaszok és tünetek leírása, gyógyszervásárlás és alapvető segítségkérés.',
+    estimated_duration: '15 perc',
+    status: 'locked',
+    situational_goal: 'Egészségügyi szituációk és tünetek elmondása.',
+    key_phrases: ['Ich habe Halsschmerzen', 'Haben Sie etwas gegen...?', 'Zweimal täglich'],
+  },
+];
+
+export function getMockLearningPlan(level: string = 'A2'): LearningPlanResponse {
+  return {
+    title: 'Zsóca Személyre Szabott Tanulási Terve',
+    level: level.includes('A2') ? 'A2 - Beszéd Felelevenítés' : level,
+    summary: 'A mindennapi beszédkészség és szituációs magabiztosság fejlesztésére optimalizált 5 lépéses tanterv.',
+    modules: MOCK_LEARNING_PLAN_MODULES,
+  };
+}
+
+export function createPlanPrompt(params: {
+  userName?: string;
+  estimated_level?: string;
+  strengths?: string[];
+  focus_areas?: string[];
+}): string {
+  const {
+    userName = 'Zsóca',
+    estimated_level = 'A2',
+    strengths = [],
+    focus_areas = [],
+  } = params;
+
+  return `
+Te egy profi német nyelvtanár vagy. Készíts egy 5 modulból álló, személyre szabott német tanulási tervet ${userName} számára.
+A cél a szóbeli kommunikáció felfrissítése, a magabiztos megszólalás mindennapi életszerű helyzetekben.
+
+Diák profilja:
+- Szint: ${estimated_level}
+- Erősségek: ${strengths.join(', ') || 'Bátor megszólalás, jó alapok'}
+- Fejlesztendő területek: ${focus_areas.join(', ') || 'Múlt idő (Perfekt), szókincs bővítés'}
+
+Követelmények a tervhez:
+1. Pontosan 5 egymásra épülő, életszerű szituációs modul (pl. 1. Pékség & Kávézó, 2. Útbaigazítás, 3. Szálloda, 4. Hétköznapi csevegés, 5. Orvos/Gyógyszertár).
+2. Az első modul státusza 'available' legyen, a többi 'locked'.
+3. Becsült időtartam modulonként: 10-15 perc.
+
+KIZÁRÓLAG érvényes JSON formátumban válaszolj, Markdown kódblokkok nélkül:
+{
+  "title": "${userName} Személyre Szabott Tanulási Terve",
+  "level": "${estimated_level}",
+  "summary": "1-2 mondatos összefoglaló a tantervről és célokról",
+  "modules": [
+    {
+      "order_index": 1,
+      "title": "Pékség & Kávézó - Rendelés magabiztosan",
+      "description": "Gyakorold az ételek, italok rendelését és a fizetést egy kávézóban.",
+      "estimated_duration": "10-15 perc",
+      "status": "available",
+      "situational_goal": "Rendelés és fizetés lebonyolítása."
+    },
+    {
+      "order_index": 2,
+      "title": "Útbaigazítás a városban",
+      "description": "Kérdezz és érts meg útvonalakat a városban és a pályaudvaron.",
+      "estimated_duration": "10-15 perc",
+      "status": "locked",
+      "situational_goal": "Tájékozódás és útbaigazítás kérése."
+    },
+    {
+      "order_index": 3,
+      "title": "Szállodai bejelentkezés & Kérések",
+      "description": "Bejelentkezés a recepción, szobafoglalás és kérések intézése.",
+      "estimated_duration": "15 perc",
+      "status": "locked",
+      "situational_goal": "Szállodai bejelentkezés és kérések."
+    },
+    {
+      "order_index": 4,
+      "title": "Hétköznapi csevegés & Hobbik",
+      "description": "Beszélgess a hétvégéről, hobbikról és ismerkedj kötetlenül.",
+      "estimated_duration": "15 perc",
+      "status": "locked",
+      "situational_goal": "Kötetlen beszélgetés és élmények megosztása."
+    },
+    {
+      "order_index": 5,
+      "title": "Orvosnál & Gyógyszertárban",
+      "description": "Panaszok és tünetek leírása, gyógyszervásárlás.",
+      "estimated_duration": "15 perc",
+      "status": "locked",
+      "situational_goal": "Egészségügyi szituációk kezelése."
+    }
+  ]
+}
+`.trim();
+}
+

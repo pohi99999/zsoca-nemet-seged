@@ -176,11 +176,11 @@ git commit -m "feat: add level assessment API and mobile chat view"
 - Create: `src/app/page.tsx`
 - Test: `tests/plan_dashboard.test.ts`
 
-- [ ] **Step 1: Write test for learning plan module generator**
-- [ ] **Step 2: Run test to verify it fails**
-- [ ] **Step 3: Implement plan API route and main mobile dashboard view**
-- [ ] **Step 4: Run test to verify it passes**
-- [ ] **Step 5: Commit**
+- [x] **Step 1: Write test for learning plan module generator**
+- [x] **Step 2: Run test to verify it fails**
+- [x] **Step 3: Implement plan API route and main mobile dashboard view**
+- [x] **Step 4: Run test to verify it passes**
+- [x] **Step 5: Commit**
 
 ---
 
