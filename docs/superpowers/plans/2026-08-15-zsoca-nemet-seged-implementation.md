@@ -224,9 +224,9 @@ git commit -m "feat: implement vocabulary memory storage screen and review API"
 **Files:**
 - Create: `e2e/mobile_flow.spec.ts`
 
-- [ ] **Step 1: Write E2E test for complete user flow**
-- [ ] **Step 2: Run E2E test to verify**
-- [ ] **Step 3: Commit**
+- [x] **Step 1: Write E2E test for complete user flow**
+- [x] **Step 2: Run E2E test to verify**
+- [x] **Step 3: Commit**
 
 ```bash
 git add e2e/

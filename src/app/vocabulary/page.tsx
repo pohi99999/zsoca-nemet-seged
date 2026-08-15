@@ -26,7 +26,7 @@ import {
   DEFAULT_SEED_VOCABULARY,
   calculateDifficultyStats,
   DifficultyStats,
-} from '@/app/api/vocabulary/route';
+} from '@/lib/vocabulary';
 
 export default function VocabularyPage() {
   const [items, setItems] = useState<VocabularyItem[]>([]);

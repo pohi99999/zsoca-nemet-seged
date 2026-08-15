@@ -3,11 +3,13 @@ import {
   GET as getVocabularyHandler,
   POST as postVocabularyHandler,
   DELETE as deleteVocabularyHandler,
+} from '../src/app/api/vocabulary/route';
+import {
   DEFAULT_SEED_VOCABULARY,
   filterVocabulary,
   calculateDifficultyStats,
   VocabularyItem,
-} from '../src/app/api/vocabulary/route';
+} from '../src/lib/vocabulary';
 
 describe('Vocabulary Memory API & Helper Logic', () => {
   beforeEach(() => {
@@ -59,7 +61,7 @@ describe('Vocabulary Memory API & Helper Logic', () => {
       expect(germanSearch).toHaveLength(1);
       expect(germanSearch[0].german_word).toBe('der Kaffee');
 
-      const hungarianSearch = filterVocabulary(sampleItems, 'számla', 'all');
+      const hungarianSearch = filterVocabulary(sampleItems, 'számlát', 'all');
       expect(hungarianSearch).toHaveLength(1);
       expect(hungarianSearch[0].german_word).toBe('die Rechnung bitte');
 
