@@ -202,14 +202,20 @@ git commit -m "feat: add level assessment API and mobile chat view"
 ### Task 7: Vocabulary & Memory Storage Screen
 
 **Files:**
+- Create: `src/app/api/vocabulary/route.ts`
 - Create: `src/app/vocabulary/page.tsx`
 - Test: `tests/vocabulary.test.ts`
 
-- [ ] **Step 1: Write test for vocabulary retrieval and audio playback item creation**
-- [ ] **Step 2: Run test to verify it fails**
-- [ ] **Step 3: Implement vocabulary page with saved words, difficulty indicators, and instant audio playback**
-- [ ] **Step 4: Run test to verify it passes**
-- [ ] **Step 5: Commit**
+- [x] **Step 1: Write test for vocabulary retrieval and audio playback item creation**
+- [x] **Step 2: Run test to verify it fails**
+- [x] **Step 3: Implement vocabulary page with saved words, difficulty indicators, and instant audio playback**
+- [x] **Step 4: Run test to verify it passes**
+- [x] **Step 5: Commit**
+
+```bash
+git add src/app/api/vocabulary/ src/app/vocabulary/ tests/vocabulary.test.ts
+git commit -m "feat: implement vocabulary memory storage screen and review API"
+```
 
 ---
 
