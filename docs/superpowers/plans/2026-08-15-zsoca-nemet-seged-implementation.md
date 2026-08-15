@@ -1,0 +1,383 @@
+# Zsóca Német Segéd Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Build a mobile-first Next.js PWA German learning app for Zsóca with cloud memory (Supabase), AI-powered level assessment, personalized learning plans, and speech synthesis/recognition (Web Speech API).
+
+**Architecture:** Next.js App Router (TypeScript, Tailwind CSS) deployed on Vercel with PWA manifest/service worker. Supabase PostgreSQL for persistence (profiles, level assessment, generated plans, vocabulary memory). Vercel Serverless API routes for Gemini API integration. Web Speech API for TTS (`de-DE`) and STT (`SpeechRecognition`).
+
+**Tech Stack:** Next.js 14/15, TypeScript, Tailwind CSS, Supabase JS Client, Gemini API (via `@google/genai` or standard REST API), Web Speech API, Vitest, React Testing Library, Playwright.
+
+---
+
+## File Structure & Map
+
+- `package.json`
+- `next.config.mjs` (PWA config with `@ducanh2912/next-pwa` or custom service worker)
+- `public/manifest.json` (PWA mobile installation metadata)
+- `public/icons/` (App icons for mobile home screen)
+- `src/lib/supabase/client.ts` (Supabase browser client)
+- `src/lib/supabase/server.ts` (Supabase server client)
+- `src/lib/speech/speechSynthesis.ts` (TTS reader for German words/sentences)
+- `src/lib/speech/speechRecognition.ts` (STT listener for microphone answers)
+- `src/lib/ai/gemini.ts` (Gemini API prompt runner for level assessment, plan generation, and dialogue)
+- `src/app/api/assessment/route.ts` (Serverless API route for level assessment)
+- `src/app/api/plan/route.ts` (Serverless API route for learning plan generation)
+- `src/app/api/chat/route.ts` (Serverless API route for situational chat practice)
+- `src/app/layout.tsx` (Mobile shell layout, viewport, PWA headers)
+- `src/app/page.tsx` (Dashboard & learning plan overview)
+- `src/app/assessment/page.tsx` (Interactive level assessment chat view)
+- `src/app/practice/[moduleId]/page.tsx` (Conversational practice screen with TTS & Microphone buttons)
+- `src/app/vocabulary/page.tsx` (Saved vocabulary & pronunciation review)
+- `supabase/migrations/20260815000000_init_schema.sql` (PostgreSQL schema migration)
+
+---
+
+### Task 1: Project Scaffolding & Next.js PWA Setup
+
+**Files:**
+- Create: `package.json`
+- Create: `next.config.mjs`
+- Create: `public/manifest.json`
+- Create: `src/app/layout.tsx`
+- Create: `src/app/page.tsx`
+- Test: `tests/pwa.test.ts`
+
+- [ ] **Step 1: Write failing test for PWA manifest existence & structure**
+
+```typescript
+// tests/pwa.test.ts
+import { describe, it, expect } from 'vitest';
+import fs from 'fs';
+import path from 'path';
+
+describe('PWA Setup', () => {
+  it('should have a valid public/manifest.json file', () => {
+    const manifestPath = path.join(process.cwd(), 'public/manifest.json');
+    expect(fs.existsSync(manifestPath)).toBe(true);
+    const content = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+    expect(content.name).toBe('Zsóca Német Segéd');
+    expect(content.display).toBe('standalone');
+  });
+});
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npx vitest run tests/pwa.test.ts`  
+Expected: FAIL with "manifest.json not found"
+
+- [ ] **Step 3: Create Next.js application & manifest file**
+
+```json
+// public/manifest.json
+{
+  "name": "Zsóca Német Segéd",
+  "short_name": "NémetSegéd",
+  "description": "Beszédfókuszú német nyelvtanulást segítő alkalmazás Zsócának",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
+```
+
+- [ ] **Step 4: Run test to verify it passes**
+
+Run: `npx vitest run tests/pwa.test.ts`  
+Expected: PASS
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add .
+git commit -m "feat: setup Next.js project scaffolding and PWA manifest"
+```
+
+---
+
+### Task 2: Supabase Schema Migration & Database Client Setup
+
+**Files:**
+- Create: `supabase/migrations/20260815000000_init_schema.sql`
+- Create: `src/lib/supabase/client.ts`
+- Create: `src/lib/supabase/server.ts`
+- Test: `tests/supabase_schema.test.ts`
+
+- [ ] **Step 1: Write test for SQL schema file definition**
+
+```typescript
+// tests/supabase_schema.test.ts
+import { describe, it, expect } from 'vitest';
+import fs from 'fs';
+import path from 'path';
+
+describe('Database Schema', () => {
+  it('should contain tables for profiles, assessment, plans, modules, and vocabulary memory', () => {
+    const migrationPath = path.join(process.cwd(), 'supabase/migrations/20260815000000_init_schema.sql');
+    expect(fs.existsSync(migrationPath)).toBe(true);
+    const sql = fs.readFileSync(migrationPath, 'utf-8');
+    expect(sql).toContain('CREATE TABLE profiles');
+    expect(sql).toContain('CREATE TABLE assessment_results');
+    expect(sql).toContain('CREATE TABLE learning_plans');
+    expect(sql).toContain('CREATE TABLE modules');
+    expect(sql).toContain('CREATE TABLE user_vocabulary_memory');
+  });
+});
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npx vitest run tests/supabase_schema.test.ts`  
+Expected: FAIL with migration file missing.
+
+- [ ] **Step 3: Create SQL migration script & Supabase clients**
+
+```sql
+-- supabase/migrations/20260815000000_init_schema.sql
+CREATE TABLE IF NOT EXISTS profiles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  current_level TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS assessment_results (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  summary TEXT,
+  strengths TEXT[],
+  focus_areas TEXT[],
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS learning_plans (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  status TEXT DEFAULT 'active',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS modules (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  plan_id UUID REFERENCES learning_plans(id) ON DELETE CASCADE,
+  order_index INT NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT,
+  status TEXT DEFAULT 'available'
+);
+
+CREATE TABLE IF NOT EXISTS user_vocabulary_memory (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  german_word TEXT NOT NULL,
+  hungarian_translation TEXT NOT NULL,
+  pronunciation_notes TEXT,
+  difficulty_score INT DEFAULT 1,
+  last_practiced_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
+
+- [ ] **Step 4: Run test to verify it passes**
+
+Run: `npx vitest run tests/supabase_schema.test.ts`  
+Expected: PASS
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add supabase/ src/lib/supabase/ tests/
+git commit -m "feat: add Supabase schema migration and client wrappers"
+```
+
+---
+
+### Task 3: Web Speech API Helper Utilities (TTS & STT)
+
+**Files:**
+- Create: `src/lib/speech/speechSynthesis.ts`
+- Create: `src/lib/speech/speechRecognition.ts`
+- Test: `tests/speech.test.ts`
+
+- [ ] **Step 1: Write test for SpeechSynthesis parameters**
+
+```typescript
+// tests/speech.test.ts
+import { describe, it, expect, vi } from 'vitest';
+import { createSpeechUtterance } from '../src/lib/speech/speechSynthesis';
+
+describe('Speech Synthesis Utility', () => {
+  it('should create an utterance configured for German (de-DE)', () => {
+    const utterance = createSpeechUtterance('Guten Tag, wie geht es Ihnen?');
+    expect(utterance.text).toBe('Guten Tag, wie geht es Ihnen?');
+    expect(utterance.lang).toBe('de-DE');
+  });
+});
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npx vitest run tests/speech.test.ts`  
+Expected: FAIL
+
+- [ ] **Step 3: Implement SpeechSynthesis & SpeechRecognition helpers**
+
+```typescript
+// src/lib/speech/speechSynthesis.ts
+export function createSpeechUtterance(text: string, rate: number = 0.9): { text: string; lang: string; rate: number } {
+  return {
+    text,
+    lang: 'de-DE',
+    rate,
+  };
+}
+
+export function speakGerman(text: string, rate: number = 0.9): void {
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+    console.warn('SpeechSynthesis is not supported in this browser.');
+    return;
+  }
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'de-DE';
+  utterance.rate = rate;
+  window.speechSynthesis.speak(utterance);
+}
+```
+
+```typescript
+// src/lib/speech/speechRecognition.ts
+export function isSpeechRecognitionSupported(): boolean {
+  if (typeof window === 'undefined') return false;
+  return 'SpeechRecognition' in window || 'webkitSpeechRecognition' in window;
+}
+```
+
+- [ ] **Step 4: Run test to verify it passes**
+
+Run: `npx vitest run tests/speech.test.ts`  
+Expected: PASS
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add src/lib/speech/ tests/
+git commit -m "feat: implement Web Speech API TTS and STT helpers"
+```
+
+---
+
+### Task 4: Interactive Level Assessment Flow & Gemini Integration
+
+**Files:**
+- Create: `src/app/api/assessment/route.ts`
+- Create: `src/app/assessment/page.tsx`
+- Test: `tests/assessment_api.test.ts`
+
+- [ ] **Step 1: Write test for level assessment API payload**
+
+```typescript
+// tests/assessment_api.test.ts
+import { describe, it, expect } from 'vitest';
+
+describe('Assessment API logic', () => {
+  it('should format initial assessment system prompt correctly', () => {
+    const prompt = 'Assessment prompt for German beginner evaluation';
+    expect(prompt).toContain('Assessment');
+  });
+});
+```
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `npx vitest run tests/assessment_api.test.ts`  
+Expected: PASS/FAIL check.
+
+- [ ] **Step 3: Implement Serverless Assessment API Route & UI Component**
+
+Implement `src/app/api/assessment/route.ts` using Gemini API with prompts tailored to German level evaluation (5-8 situational questions). Implement `src/app/assessment/page.tsx` with mobile-first chat UI, speaker buttons, microphone buttons, and completion transition.
+
+- [ ] **Step 4: Verify test suite**
+
+Run: `npx vitest run`  
+Expected: PASS
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add src/app/api/assessment/ src/app/assessment/ tests/
+git commit -m "feat: add level assessment API and mobile chat view"
+```
+
+---
+
+### Task 5: Personalized Learning Plan Generator & Dashboard UI
+
+**Files:**
+- Create: `src/app/api/plan/route.ts`
+- Create: `src/app/page.tsx`
+- Test: `tests/plan_dashboard.test.ts`
+
+- [ ] **Step 1: Write test for learning plan module generator**
+- [ ] **Step 2: Run test to verify it fails**
+- [ ] **Step 3: Implement plan API route and main mobile dashboard view**
+- [ ] **Step 4: Run test to verify it passes**
+- [ ] **Step 5: Commit**
+
+---
+
+### Task 6: Conversational Situational Practice Screen
+
+**Files:**
+- Create: `src/app/api/chat/route.ts`
+- Create: `src/app/practice/[moduleId]/page.tsx`
+- Test: `tests/practice_chat.test.ts`
+
+- [ ] **Step 1: Write test for practice chat handler with TTS/STT toggle logic**
+- [ ] **Step 2: Run test to verify it fails**
+- [ ] **Step 3: Implement practice chat page with audio playback, mic recording, translation toggle, and optional grammar card**
+- [ ] **Step 4: Run test to verify it passes**
+- [ ] **Step 5: Commit**
+
+---
+
+### Task 7: Vocabulary & Memory Storage Screen
+
+**Files:**
+- Create: `src/app/vocabulary/page.tsx`
+- Test: `tests/vocabulary.test.ts`
+
+- [ ] **Step 1: Write test for vocabulary retrieval and audio playback item creation**
+- [ ] **Step 2: Run test to verify it fails**
+- [ ] **Step 3: Implement vocabulary page with saved words, difficulty indicators, and instant audio playback**
+- [ ] **Step 4: Run test to verify it passes**
+- [ ] **Step 5: Commit**
+
+---
+
+### Task 8: End-to-End Testing & Verification with Playwright
+
+**Files:**
+- Create: `e2e/mobile_flow.spec.ts`
+
+- [ ] **Step 1: Write E2E test for complete user flow**
+- [ ] **Step 2: Run E2E test to verify**
+- [ ] **Step 3: Commit**
+
+```bash
+git add e2e/
+git commit -m "test: add Playwright E2E tests for mobile assessment and practice flow"
+```
