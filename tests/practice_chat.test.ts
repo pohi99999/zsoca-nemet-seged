@@ -56,8 +56,8 @@ describe('Situational Practice Chat AI & Helpers', () => {
 
 describe('Practice Chat Route Handler (/api/chat)', () => {
   beforeEach(() => {
-    delete process.env.GITHUB_TOKEN;
-    delete process.env.GITHUB_MODELS_TOKEN;
+    delete process.env.GEMINI_API_KEY;
+    delete process.env.GOOGLE_AI_API_KEY;
     vi.restoreAllMocks();
   });
 
@@ -136,8 +136,8 @@ describe('Practice Chat Route Handler (/api/chat)', () => {
     expect(data.is_completed).toBe(true);
   });
 
-  it('should call the AI provider when a GitHub token is provided', async () => {
-    process.env.GITHUB_TOKEN = 'test-github-token';
+  it('should call Gemini API when API key is provided', async () => {
+    process.env.GEMINI_API_KEY = 'test-gemini-key';
 
     const aiResponse: SituationalChatResponse = {
       german_text: 'Sehr gerne! Das macht dann zusammen 4 Euro 20 bitte.',
@@ -157,9 +157,11 @@ describe('Practice Chat Route Handler (/api/chat)', () => {
     globalThis.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => ({
-        choices: [
+        candidates: [
           {
-            message: { role: 'assistant', content: JSON.stringify(aiResponse) },
+            content: {
+              parts: [{ text: JSON.stringify(aiResponse) }],
+            },
           },
         ],
       }),

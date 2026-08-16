@@ -169,17 +169,16 @@ KIZÁRÓLAG érvényes JSON formátumban válaszolj, Markdown kódblokkok nélk�
 }
 
 /**
- * Calls the GitHub Models API (OpenAI-compatible chat completions, included
- * with a GitHub Copilot subscription) or falls back safely.
+ * Calls Google Gemini REST API or falls back safely
  */
 export async function generateGeminiText(
   prompt: string,
   systemInstruction?: string,
   options?: { temperature?: number; maxOutputTokens?: number }
 ): Promise<string> {
-  const token = process.env.GITHUB_TOKEN || process.env.GITHUB_MODELS_TOKEN;
+  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
 
-  if (!token) {
+  if (!apiKey) {
     // Return sensible mock response
     if (prompt.includes('szintfelmérő') || prompt.includes('kérdés')) {
       return MOCK_QUESTIONS[0].content;
@@ -188,52 +187,52 @@ export async function generateGeminiText(
   }
 
   try {
-    const model = process.env.GITHUB_MODELS_DEFAULT_MODEL || 'openai/gpt-4o-mini';
-    const messages: Array<{ role: string; content: string }> = [];
-    if (systemInstruction) {
-      messages.push({ role: 'system', content: systemInstruction });
-    }
-    messages.push({ role: 'user', content: prompt });
-
-    const res = await fetch('https://models.github.ai/inference/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages,
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
+    const payload: any = {
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
         temperature: options?.temperature ?? 0.7,
-        max_tokens: options?.maxOutputTokens ?? 800,
-      }),
+        maxOutputTokens: options?.maxOutputTokens ?? 800,
+      },
+    };
+
+    if (systemInstruction) {
+      payload.systemInstruction = {
+        parts: [{ text: systemInstruction }],
+      };
+    }
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
     });
 
     if (!res.ok) {
-      console.warn(`GitHub Models API returned status ${res.status}. Using mock fallback.`);
+      console.warn(`Gemini API returned status ${res.status}. Using mock fallback.`);
       return MOCK_QUESTIONS[0].content;
     }
 
     const data = await res.json();
-    const messageText = data?.choices?.[0]?.message?.content;
-    return messageText || MOCK_QUESTIONS[0].content;
+    const candidateText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    return candidateText || MOCK_QUESTIONS[0].content;
   } catch (err) {
-    console.warn('GitHub Models API call failed. Using mock fallback.', err);
+    console.warn('Gemini API call failed. Using mock fallback.', err);
     return MOCK_QUESTIONS[0].content;
   }
 }
 
 /**
- * Calls the AI provider and parses the response as JSON
+ * Calls Google Gemini and parses response as JSON
  */
 export async function generateGeminiJson<T>(
   prompt: string,
   systemInstruction?: string,
   fallbackData?: T
 ): Promise<T> {
-  const token = process.env.GITHUB_TOKEN || process.env.GITHUB_MODELS_TOKEN;
+  const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
 
-  if (!token) {
+  if (!apiKey) {
     return (fallbackData || (MOCK_FINAL_RESULT as unknown as T)) as T;
   }
 
@@ -246,7 +245,7 @@ export async function generateGeminiJson<T>(
     if (parsed) return parsed;
     return fallbackData || (MOCK_FINAL_RESULT as unknown as T);
   } catch (err) {
-    console.warn('Error parsing JSON from AI response:', err);
+    console.warn('Error parsing JSON from Gemini response:', err);
     return fallbackData || (MOCK_FINAL_RESULT as unknown as T);
   }
 }

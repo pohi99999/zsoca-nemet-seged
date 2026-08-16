@@ -79,7 +79,7 @@ export async function POST(request: Request) {
     let finalPlan: LearningPlanResponse = fallbackPlan;
 
     // Check Gemini API Key
-    const apiKey = process.env.GITHUB_TOKEN || process.env.GITHUB_MODELS_TOKEN;
+    const apiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY;
     if (apiKey) {
       const prompt = createPlanPrompt({
         userName,
