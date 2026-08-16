@@ -56,3 +56,56 @@ A meglévő, elkészült projekten végigfutott egy teljes körű átvizsgálás
 - Az e2e Playwright teszt két hibás asszerciója javítva (a szituációs modul 3, nem 4 felhasználói kör után zárul le; a keresés-teszt olyan szót keresett, ami sosem lett elmentve).
 
 Ellenőrzés: `npm test` (55/55 ✅), `npx playwright test` (1/1 ✅), `npm run build` (sikeres ✅), böngészős manuális teszt a teljes user flow-n (Tanterv → Szintfelmérő → Gyakorlás → Szókincstár).
+
+---
+
+## Élesítés & Gemini-integráció hibakeresése (2026-08-16, folytatás)
+
+Az auditot követően a projekt élesítve lett a Vercelen (`brunellaagent-1630s-projects` csapat,
+`https://zsoca-nemet-seged.vercel.app/`, git-kapcsolt auto-deploy) és a Supabase-adatbázis
+sémája migrálva lett (`brunella` projekt, `zhybisokzmshtgwkisqv`). A Gemini AI-integráció
+valódi működése több iteráción keresztül derült ki — az alábbi hibák **egymásra épülve**
+takarták el egymást, ezért érdemes sorban átnézni, ha az AI-funkciók megint hallgatnak:
+
+1. **Elavult kulcsformátum-feltételezés.** A Google 2026 közepén áttért az `AQ.`-val kezdődő
+   "Auth key" formátumra a régi `AIzaSy...` "Standard key" helyett (az utóbbiakat 2026
+   szeptemberétől teljesen kivezetik). Egy `AQ.`-val kezdődő kulcs **teljesen érvényes**,
+   nem hibás/rossz kulcs.
+2. **Rossz hitelesítési módszer.** A kód a kulcsot `?key=...` URL-paraméterként küldte —
+   ez a legacy módszer, és az új `AQ.` Auth kulcsokkal nem működik. A helyes mód: az
+   `x-goog-api-key` HTTP fejléc. Javítva a `src/lib/ai/gemini.ts`-ben.
+3. **Néma JSON-parse hiba a "thinking" tokenek miatt.** A `gemini-3.5-flash` alapértelmezett
+   "medium" gondolkodási szintje felemésztette a `maxOutputTokens: 800` keret nagy részét
+   láthatatlan reasoning tokenekre, ezért a tényleges JSON válasz derékba tört
+   ("Unterminated string in JSON"). A `parseAssessmentResponse` ezt a hibát elnyeli és
+   `null`-t ad vissza kivétel dobása nélkül, így a `generateGeminiJson` **figyelmeztetés
+   nélkül** esett vissza mock tartalomra — ez volt a legnehezebben behatárolható hiba,
+   mert a Vercel Logs semmilyen warningot nem mutatott. Javítva:
+   `generationConfig.thinkingConfig.thinkingLevel: "low"` + `maxOutputTokens: 2048` +
+   `responseMimeType: "application/json"` (ez utóbbi kikényszeríti a tiszta JSON választ
+   markdown-fence/prózai szöveg nélkül).
+4. **Ingyenes szint kvótakorlátja.** A Gemini API ingyenes csomagja `gemini-3.5-flash`-re
+   **percenként 20 kérésre** korlátoz. Intenzív teszteléskor (több egymást követő hívás
+   rövid idő alatt) ez `429 RESOURCE_EXHAUSTED` hibát ad. Zsóca normál, egy-egy gyakorlós
+   használatánál ez valószínűleg nem lesz probléma, de ha rendszeresen mock-tartalmat kap,
+   ez legyen az első gyanú (nem hiba, csak várni kell ~1 percet, vagy fizetős szintre váltani).
+5. **Google-oldali átmeneti túlterheltség.** A `gemini-3.5-flash` modell időnként
+   `503 UNAVAILABLE` ("high demand") hibát ad — ez Google-oldali, tőlünk független,
+   átmeneti jelenség, amit a kód már ma is helyesen kezel (graceful fallback mockra).
+
+> [!success] Az integráció megerősítve működik
+> Élő teszttel igazolva: a `generateContent` hívás sikeres esetben valódi, kontextusfüggő
+> német szöveget ad vissza (pl. `"Hallo, wie geht es dir?"` egy egyedi promptra). A kód
+> minden ismert hibaforrást lekezel, és sosem törik meg a felhasználói élmény — legrosszabb
+> esetben (kvóta/túlterheltség) a beépített, minőségi mock tartalomra esik vissza némán.
+
+**Diagnosztikai módszer, ami bevált:** amikor a Vercel Logs UI böngészős automatizáláson
+keresztül megbízhatatlannak bizonyult (szűrők/keresés nem renderelt konzisztensen), egy
+**ideiglenes `/api/debug-env` végpont** (törölve a session végén) sokkal megbízhatóbb volt:
+közvetlenül a JSON válaszban adta vissza a nyers Google API választ (`status`, `bodyPreview`),
+kiiktatva a dashboard-UI bizonytalanságait. Hasonló helyzetben érdemes ezt a mintát újra
+használni ahelyett, hogy a Logs felületet kényszerítenénk.
+
+**Egy elhagyott `GITHUB_TOKEN` Vercel env változó maradt** egy korábbi, végül visszavont
+kísérletből (GitHub Models API — 2026.07.30-án véglegesen megszűnt szolgáltatás, nem
+használható). Nem árt, de törölhető a Vercel Environment Variables alól, ha valaki ránéz.
