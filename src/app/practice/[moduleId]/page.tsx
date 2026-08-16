@@ -22,17 +22,15 @@ import {
   Zap,
 } from 'lucide-react';
 import { speakGerman, stopSpeaking } from '@/lib/speech/speechSynthesis';
-import {
-  createSpeechRecognizer,
-  isSpeechRecognitionSupported,
-  ISpeechRecognition,
-} from '@/lib/speech/speechRecognition';
+import { isSpeechRecognitionSupported } from '@/lib/speech/speechRecognition';
+import { useSpeechRecorder } from '@/lib/speech/useSpeechRecorder';
 import {
   SituationalVocabularySuggestion,
   SituationalChatMessage,
   SituationalChatResponse,
   getMockLearningPlan,
 } from '@/lib/ai/gemini';
+import { VocabularyItem } from '@/lib/vocabulary';
 
 interface ChatMessageItem extends SituationalChatMessage {
   id: string;
@@ -53,7 +51,6 @@ export default function SituationalPracticePage() {
   const [messages, setMessages] = useState<ChatMessageItem[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [isRecording, setIsRecording] = useState(false);
   const [isSpeakingId, setIsSpeakingId] = useState<string | null>(null);
   const [turnCount, setTurnCount] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
@@ -61,9 +58,19 @@ export default function SituationalPracticePage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [speechSupported, setSpeechSupported] = useState(true);
 
-  const recognizerRef = useRef<ISpeechRecognition | null>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const { isRecording, toggle: toggleRecording, stop: stopRecording } = useSpeechRecorder(
+    (text, isFinal) => {
+      setInputText((prev) => {
+        if (isFinal) {
+          return prev ? `${prev} ${text}`.trim() : text;
+        }
+        return text;
+      });
+    }
+  );
 
   // Load Module metadata & Saved Vocabulary
   useEffect(() => {
@@ -74,8 +81,10 @@ export default function SituationalPracticePage() {
       try {
         const storedVocab = localStorage.getItem('zsoca_vocabulary');
         if (storedVocab) {
-          const parsed: Array<{ german: string }> = JSON.parse(storedVocab);
-          setSavedWords(new Set(parsed.map((w) => w.german.toLowerCase())));
+          const parsed: VocabularyItem[] = JSON.parse(storedVocab);
+          setSavedWords(
+            new Set(parsed.filter((w) => w.german_word).map((w) => w.german_word.toLowerCase()))
+          );
         }
 
         // Load module title from learning plan
@@ -108,13 +117,12 @@ export default function SituationalPracticePage() {
 
     return () => {
       stopSpeaking();
-      if (recognizerRef.current) {
-        recognizerRef.current.stop();
-      }
+      stopRecording();
       if (toastTimeoutRef.current) {
         clearTimeout(toastTimeoutRef.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [moduleId]);
 
   // Scroll to bottom on new messages
@@ -208,21 +216,25 @@ export default function SituationalPracticePage() {
     // 1. Speak word
     speakGerman(vocab.german);
 
-    // 2. Persist to localStorage
+    // 2. Persist to localStorage using the same VocabularyItem shape the
+    // Szókincstár screen and /api/vocabulary expect.
     if (typeof window !== 'undefined') {
       try {
         const storedStr = localStorage.getItem('zsoca_vocabulary');
-        const list: Array<any> = storedStr ? JSON.parse(storedStr) : [];
-        const exists = list.some((w) => w.german.toLowerCase() === vocab.german.toLowerCase());
+        const list: VocabularyItem[] = storedStr ? JSON.parse(storedStr) : [];
+        const exists = list.some(
+          (w) => w.german_word && w.german_word.toLowerCase() === vocab.german.toLowerCase()
+        );
 
         if (!exists) {
-          const newWord = {
-            id: `vocab-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-            german: vocab.german,
-            hungarian: vocab.hungarian,
-            pronunciation_hint: vocab.pronunciation_hint || '',
-            module_id: moduleId,
-            saved_at: new Date().toISOString(),
+          const newWord: VocabularyItem = {
+            id: `vocab-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+            german_word: vocab.german,
+            hungarian_translation: vocab.hungarian,
+            pronunciation_notes: vocab.pronunciation_hint || '',
+            difficulty_score: 1,
+            category: moduleTitle,
+            last_practiced_at: new Date().toISOString(),
           };
           list.unshift(newWord);
           localStorage.setItem('zsoca_vocabulary', JSON.stringify(list));
@@ -237,39 +249,6 @@ export default function SituationalPracticePage() {
     }
   };
 
-  const toggleRecording = () => {
-    if (isRecording) {
-      recognizerRef.current?.stop();
-      setIsRecording(false);
-      return;
-    }
-
-    const recognizer = createSpeechRecognizer({
-      lang: 'de-DE',
-      onResult: (text: string, isFinal: boolean) => {
-        setInputText((prev) => {
-          if (isFinal) {
-            return prev ? `${prev} ${text}`.trim() : text;
-          }
-          return text;
-        });
-      },
-      onError: (err) => {
-        console.warn('Speech recognition error:', err);
-        setIsRecording(false);
-      },
-      onEnd: () => {
-        setIsRecording(false);
-      },
-    });
-
-    if (recognizer) {
-      recognizerRef.current = recognizer;
-      recognizer.start();
-      setIsRecording(true);
-    }
-  };
-
   const handleSendMessage = async (customText?: string) => {
     const textToSend = customText || inputText;
     if (!textToSend.trim() || isLoading) return;
@@ -278,8 +257,7 @@ export default function SituationalPracticePage() {
     stopSpeaking();
     setIsSpeakingId(null);
     if (isRecording) {
-      recognizerRef.current?.stop();
-      setIsRecording(false);
+      stopRecording();
     }
 
     const userMsg: ChatMessageItem = {

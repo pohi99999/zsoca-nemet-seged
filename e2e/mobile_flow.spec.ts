@@ -144,14 +144,10 @@ test.describe('Zsóca Német Segéd - Mobile User Journey E2E Flow', () => {
     await practiceInput.fill('Was kostet das zusammen?');
     await page.locator('button[title="Üzenet elküldése"]').click();
 
-    // Roleplay Turn 3
+    // Roleplay Turn 3 (final turn — the mock bakery scenario completes the
+    // module as soon as this reply comes back, so no further input follows)
     await expect(page.getByText(/3 \/ 4 kör|4 \/ 4 kör/)).toBeVisible({ timeout: 10000 });
     await practiceInput.fill('Ich bezahle mit Karte, bitte.');
-    await page.locator('button[title="Üzenet elküldése"]').click();
-
-    // Roleplay Turn 4 (Final completion turn)
-    await expect(page.getByText(/4 \/ 4 kör/)).toBeVisible({ timeout: 10000 });
-    await practiceInput.fill('Vielen Dank, auf Wiedersehen!');
     await page.locator('button[title="Üzenet elküldése"]').click();
 
     // Verify Completion Modal
@@ -170,11 +166,11 @@ test.describe('Zsóca Német Segéd - Mobile User Journey E2E Flow', () => {
     await expect(page.locator('h1')).toContainText('Szókincstár');
     await expect(page.getByText('Mentett kifejezések:')).toBeVisible();
 
-    // Test Search input
+    // Test Search input — search for the word saved earlier via the vocab chip
     const searchInput = page.getByPlaceholder('Keresés németül vagy magyarul...');
     await expect(searchInput).toBeVisible();
-    await searchInput.fill('Kaffee');
-    await expect(page.getByText('der Kaffee').or(page.getByText('Kaffee'))).toBeVisible();
+    await searchInput.fill('Brötchen');
+    await expect(page.getByText('das Brötchen')).toBeVisible();
 
     // Clear search
     await searchInput.fill('');

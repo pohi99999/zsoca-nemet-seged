@@ -25,6 +25,7 @@ import {
   VocabularyItem,
   DEFAULT_SEED_VOCABULARY,
   calculateDifficultyStats,
+  filterVocabulary,
   DifficultyStats,
 } from '@/lib/vocabulary';
 
@@ -56,15 +57,19 @@ export default function VocabularyPage() {
   const loadVocabulary = async () => {
     setIsLoading(true);
     try {
-      let cached: VocabularyItem[] | null = null;
+      // Locally saved words (including anything learned during practice sessions)
+      // are the source of truth once they exist — without a configured Supabase
+      // backend, the API only ever returns the static seed list, which would
+      // otherwise silently wipe out everything Zsóca has saved so far.
       if (typeof window !== 'undefined') {
         const stored = localStorage.getItem('zsoca_vocabulary');
         if (stored) {
           try {
-            cached = JSON.parse(stored);
-            if (cached && cached.length > 0) {
+            const cached = JSON.parse(stored);
+            if (Array.isArray(cached) && cached.length > 0) {
               setItems(cached);
               setIsLoading(false);
+              return;
             }
           } catch (e) {
             console.warn('Error parsing cached vocabulary:', e);
@@ -72,7 +77,7 @@ export default function VocabularyPage() {
         }
       }
 
-      // Fetch from API
+      // No local cache yet — fetch initial list from the API (seed or Supabase-backed)
       const res = await fetch('/api/vocabulary');
       if (res.ok) {
         const data = await res.json();
@@ -81,15 +86,15 @@ export default function VocabularyPage() {
           if (typeof window !== 'undefined') {
             localStorage.setItem('zsoca_vocabulary', JSON.stringify(data.items));
           }
+        } else {
+          setItems(DEFAULT_SEED_VOCABULARY);
         }
-      } else if (!cached) {
+      } else {
         setItems(DEFAULT_SEED_VOCABULARY);
       }
     } catch (e) {
       console.error('Failed to load vocabulary:', e);
-      if (items.length === 0) {
-        setItems(DEFAULT_SEED_VOCABULARY);
-      }
+      setItems(DEFAULT_SEED_VOCABULARY);
     } finally {
       setIsLoading(false);
     }
@@ -162,21 +167,7 @@ export default function VocabularyPage() {
 
   // Filter items
   const filteredItems = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-    return items.filter((item) => {
-      const matchQuery =
-        !query ||
-        item.german_word.toLowerCase().includes(query) ||
-        item.hungarian_translation.toLowerCase().includes(query) ||
-        (item.pronunciation_notes && item.pronunciation_notes.toLowerCase().includes(query)) ||
-        (item.category && item.category.toLowerCase().includes(query));
-
-      const matchDifficulty =
-        selectedDifficulty === 'all' ||
-        String(item.difficulty_score) === selectedDifficulty;
-
-      return matchQuery && matchDifficulty;
-    });
+    return filterVocabulary(items, searchQuery, selectedDifficulty);
   }, [items, searchQuery, selectedDifficulty]);
 
   const stats: DifficultyStats = useMemo(() => {

@@ -17,11 +17,8 @@ import {
   VolumeX,
 } from 'lucide-react';
 import { speakGerman, stopSpeaking } from '@/lib/speech/speechSynthesis';
-import {
-  createSpeechRecognizer,
-  isSpeechRecognitionSupported,
-  ISpeechRecognition,
-} from '@/lib/speech/speechRecognition';
+import { isSpeechRecognitionSupported } from '@/lib/speech/speechRecognition';
+import { useSpeechRecorder } from '@/lib/speech/useSpeechRecorder';
 
 interface Message {
   id: string;
@@ -44,7 +41,6 @@ export default function AssessmentPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [isRecording, setIsRecording] = useState(false);
   const [isSpeakingId, setIsSpeakingId] = useState<string | null>(null);
   const [questionIndex, setQuestionIndex] = useState(1);
   const [totalQuestions, setTotalQuestions] = useState(5);
@@ -52,8 +48,18 @@ export default function AssessmentPage() {
   const [resultData, setResultData] = useState<AssessmentResultData | null>(null);
   const [speechSupported, setSpeechSupported] = useState(true);
 
-  const recognizerRef = useRef<ISpeechRecognition | null>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
+
+  const { isRecording, toggle: toggleRecording, stop: stopRecording } = useSpeechRecorder(
+    (text, isFinal) => {
+      setInputText((prev) => {
+        if (isFinal) {
+          return prev ? `${prev} ${text}`.trim() : text;
+        }
+        return text;
+      });
+    }
+  );
 
   // Initialize Speech Support & Initial Question
   useEffect(() => {
@@ -62,10 +68,9 @@ export default function AssessmentPage() {
 
     return () => {
       stopSpeaking();
-      if (recognizerRef.current) {
-        recognizerRef.current.stop();
-      }
+      stopRecording();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Auto-scroll chat to bottom
@@ -131,39 +136,6 @@ export default function AssessmentPage() {
     );
   };
 
-  const toggleRecording = () => {
-    if (isRecording) {
-      recognizerRef.current?.stop();
-      setIsRecording(false);
-      return;
-    }
-
-    const recognizer = createSpeechRecognizer({
-      lang: 'de-DE',
-      onResult: (text: string, isFinal: boolean) => {
-        setInputText((prev) => {
-          if (isFinal) {
-            return prev ? `${prev} ${text}`.trim() : text;
-          }
-          return text;
-        });
-      },
-      onError: (err) => {
-        console.warn('Speech recognition error:', err);
-        setIsRecording(false);
-      },
-      onEnd: () => {
-        setIsRecording(false);
-      },
-    });
-
-    if (recognizer) {
-      recognizerRef.current = recognizer;
-      recognizer.start();
-      setIsRecording(true);
-    }
-  };
-
   const handleSendMessage = async (customText?: string) => {
     const textToSend = customText || inputText;
     if (!textToSend.trim() || isLoading) return;
@@ -172,8 +144,7 @@ export default function AssessmentPage() {
     stopSpeaking();
     setIsSpeakingId(null);
     if (isRecording) {
-      recognizerRef.current?.stop();
-      setIsRecording(false);
+      stopRecording();
     }
 
     const userMessage: Message = {
