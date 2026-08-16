@@ -215,6 +215,9 @@ export async function generateGeminiText(
 
     const data = await res.json();
     const candidateText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!candidateText) {
+      console.warn('Gemini API returned 200 but no candidate text. Raw response:', JSON.stringify(data).slice(0, 1000));
+    }
     return candidateText || MOCK_QUESTIONS[0].content;
   } catch (err) {
     console.warn('Gemini API call failed. Using mock fallback.', err);
