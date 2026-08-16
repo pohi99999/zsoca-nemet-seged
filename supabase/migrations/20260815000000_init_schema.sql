@@ -49,5 +49,24 @@ CREATE TABLE IF NOT EXISTS user_vocabulary_memory (
   hungarian_translation TEXT NOT NULL,
   pronunciation_notes TEXT,
   difficulty_score INT DEFAULT 1,
-  last_practiced_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  last_practiced_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  -- Required for the upsert(..., { onConflict: 'user_id,german_word' })
+  -- call in /api/chat's vocabulary persistence.
+  UNIQUE (user_id, german_word)
 );
+
+-- Row Level Security: this app has no end-user auth, so its server-side API
+-- routes are the only writers/readers. Grant access to the service_role
+-- (preferred) and to anon (fallback, since the app degrades to using the
+-- anon key server-side when no service_role key is configured).
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE assessment_results ENABLE ROW LEVEL SECURITY;
+ALTER TABLE learning_plans ENABLE ROW LEVEL SECURITY;
+ALTER TABLE modules ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_vocabulary_memory ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "service_role_all_profiles" ON profiles FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "service_role_all_assessment_results" ON assessment_results FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "service_role_all_learning_plans" ON learning_plans FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "service_role_all_modules" ON modules FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "service_role_all_user_vocabulary_memory" ON user_vocabulary_memory FOR ALL TO service_role USING (true) WITH CHECK (true);
