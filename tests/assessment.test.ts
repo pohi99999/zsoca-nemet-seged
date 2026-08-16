@@ -19,9 +19,9 @@ describe('Gemini AI Service & Prompt Helpers', () => {
   });
 
   describe('generateGeminiText (fallback & mock mode)', () => {
-    it('should return mock text when GEMINI_API_KEY is not set', async () => {
-      delete process.env.GEMINI_API_KEY;
-      delete process.env.GOOGLE_AI_API_KEY;
+    it('should return mock text when GITHUB_TOKEN is not set', async () => {
+      delete process.env.GITHUB_TOKEN;
+      delete process.env.GITHUB_MODELS_TOKEN;
 
       const result = await generateGeminiText('Hallo, wie geht es dir?');
       expect(result).toBeDefined();
@@ -29,14 +29,12 @@ describe('Gemini AI Service & Prompt Helpers', () => {
       expect(result.length).toBeGreaterThan(0);
     });
 
-    it('should call fetch when GEMINI_API_KEY is configured', async () => {
-      process.env.GEMINI_API_KEY = 'test-gemini-key';
+    it('should call fetch when GITHUB_TOKEN is configured', async () => {
+      process.env.GITHUB_TOKEN = 'test-github-token';
       const mockResponse = {
-        candidates: [
+        choices: [
           {
-            content: {
-              parts: [{ text: 'Guten Tag! Mir geht es sehr gut.' }],
-            },
+            message: { role: 'assistant', content: 'Guten Tag! Mir geht es sehr gut.' },
           },
         ],
       };
@@ -52,7 +50,7 @@ describe('Gemini AI Service & Prompt Helpers', () => {
     });
 
     it('should gracefully fallback to mock when fetch fails', async () => {
-      process.env.GEMINI_API_KEY = 'test-gemini-key';
+      process.env.GITHUB_TOKEN = 'test-github-token';
       globalThis.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
 
       const result = await generateGeminiText('Hallo');
@@ -62,8 +60,8 @@ describe('Gemini AI Service & Prompt Helpers', () => {
   });
 
   describe('generateGeminiJson', () => {
-    it('should parse JSON response from Gemini API', async () => {
-      process.env.GEMINI_API_KEY = 'test-gemini-key';
+    it('should parse JSON response from the AI provider', async () => {
+      process.env.GITHUB_TOKEN = 'test-github-token';
       const mockJsonPayload = {
         done: false,
         message: {
@@ -76,11 +74,9 @@ describe('Gemini AI Service & Prompt Helpers', () => {
       globalThis.fetch = vi.fn().mockResolvedValue({
         ok: true,
         json: async () => ({
-          candidates: [
+          choices: [
             {
-              content: {
-                parts: [{ text: JSON.stringify(mockJsonPayload) }],
-              },
+              message: { role: 'assistant', content: JSON.stringify(mockJsonPayload) },
             },
           ],
         }),
@@ -97,8 +93,8 @@ describe('Gemini AI Service & Prompt Helpers', () => {
     });
 
     it('should return fallback data when API key is missing or parsing fails', async () => {
-      delete process.env.GEMINI_API_KEY;
-      delete process.env.GOOGLE_AI_API_KEY;
+      delete process.env.GITHUB_TOKEN;
+      delete process.env.GITHUB_MODELS_TOKEN;
 
       const fallback: AssessmentResult = {
         summary: 'Kezdő szintű német tudás, jó beszédkészség.',
@@ -164,8 +160,8 @@ describe('Gemini AI Service & Prompt Helpers', () => {
 
 describe('Assessment API Route Handler (/api/assessment)', () => {
   beforeEach(() => {
-    delete process.env.GEMINI_API_KEY;
-    delete process.env.GOOGLE_AI_API_KEY;
+    delete process.env.GITHUB_TOKEN;
+    delete process.env.GITHUB_MODELS_TOKEN;
     vi.restoreAllMocks();
   });
 

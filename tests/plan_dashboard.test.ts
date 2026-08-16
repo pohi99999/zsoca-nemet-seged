@@ -53,8 +53,8 @@ describe('Learning Plan Generator AI & Helpers', () => {
 
 describe('Learning Plan API Route Handler (/api/plan)', () => {
   beforeEach(() => {
-    delete process.env.GEMINI_API_KEY;
-    delete process.env.GOOGLE_AI_API_KEY;
+    delete process.env.GITHUB_TOKEN;
+    delete process.env.GITHUB_MODELS_TOKEN;
     vi.restoreAllMocks();
   });
 
@@ -100,8 +100,8 @@ describe('Learning Plan API Route Handler (/api/plan)', () => {
       expect(firstModule.status).toBe('available');
     });
 
-    it('should use Gemini when API key is set and parsed correctly', async () => {
-      process.env.GEMINI_API_KEY = 'test-key';
+    it('should use the AI provider when a GitHub token is set and parsed correctly', async () => {
+      process.env.GITHUB_TOKEN = 'test-github-token';
 
       const customPlan = {
         title: 'Zsóca Egyéni Német Beszédfejlesztő Tanterve',
@@ -154,11 +154,9 @@ describe('Learning Plan API Route Handler (/api/plan)', () => {
       globalThis.fetch = vi.fn().mockResolvedValue({
         ok: true,
         json: async () => ({
-          candidates: [
+          choices: [
             {
-              content: {
-                parts: [{ text: JSON.stringify(customPlan) }],
-              },
+              message: { role: 'assistant', content: JSON.stringify(customPlan) },
             },
           ],
         }),
