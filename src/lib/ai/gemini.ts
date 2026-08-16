@@ -192,7 +192,9 @@ export async function generateGeminiText(
       contents: [{ parts: [{ text: prompt }] }],
       generationConfig: {
         temperature: options?.temperature ?? 0.7,
-        maxOutputTokens: options?.maxOutputTokens ?? 800,
+        maxOutputTokens: options?.maxOutputTokens ?? 2048,
+        responseMimeType: 'application/json',
+        thinkingConfig: { thinkingLevel: 'low' },
       },
     };
 
